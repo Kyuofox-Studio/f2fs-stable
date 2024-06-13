@@ -3964,7 +3964,9 @@ static int f2fs_sec_trim_file(struct file *filp, unsigned long arg)
 			 IS_ENCRYPTED(inode) && f2fs_is_multi_device(sbi)))
 		return -EOPNOTSUPP;
 
-	file_start_write(filp);
+	ret = mnt_want_write_file(filp);
+	if (ret)
+		return ret;
 	inode_lock(inode);
 
 	if (f2fs_is_atomic_file(inode) || f2fs_compressed_file(inode) ||
@@ -4090,7 +4092,7 @@ out:
 	f2fs_up_write(&F2FS_I(inode)->i_gc_rwsem[WRITE]);
 err:
 	inode_unlock(inode);
-	file_end_write(filp);
+	mnt_drop_write_file(filp);
 
 	return ret;
 }
@@ -4144,7 +4146,9 @@ static int f2fs_ioc_set_compress_option(struct file *filp, unsigned long arg)
 		option.algorithm >= COMPRESS_MAX)
 		return -EINVAL;
 
-	file_start_write(filp);
+	ret = mnt_want_write_file(filp);
+	if (ret)
+		return ret;
 	inode_lock(inode);
 
 	f2fs_down_write(&F2FS_I(inode)->i_sem);
@@ -4183,7 +4187,7 @@ static int f2fs_ioc_set_compress_option(struct file *filp, unsigned long arg)
 out:
 	f2fs_up_write(&F2FS_I(inode)->i_sem);
 	inode_unlock(inode);
-	file_end_write(filp);
+	mnt_drop_write_file(filp);
 
 	return ret;
 }
@@ -4237,7 +4241,9 @@ static int f2fs_ioc_decompress_file(struct file *filp)
 
 	f2fs_balance_fs(sbi, true);
 
-	file_start_write(filp);
+	ret = mnt_want_write_file(filp);
+	if (ret)
+		return ret;
 	inode_lock(inode);
 
 	if (!f2fs_is_compress_backend_ready(inode)) {
@@ -4292,7 +4298,7 @@ static int f2fs_ioc_decompress_file(struct file *filp)
 	f2fs_update_time(sbi, REQ_TIME);
 out:
 	inode_unlock(inode);
-	file_end_write(filp);
+	mnt_drop_write_file(filp);
 
 	return ret;
 }
@@ -4314,7 +4320,9 @@ static int f2fs_ioc_compress_file(struct file *filp)
 
 	f2fs_balance_fs(sbi, true);
 
-	file_start_write(filp);
+	ret = mnt_want_write_file(filp);
+	if (ret)
+		return ret;
 	inode_lock(inode);
 
 	if (!f2fs_is_compress_backend_ready(inode)) {
@@ -4370,7 +4378,7 @@ static int f2fs_ioc_compress_file(struct file *filp)
 	f2fs_update_time(sbi, REQ_TIME);
 out:
 	inode_unlock(inode);
-	file_end_write(filp);
+	mnt_drop_write_file(filp);
 
 	return ret;
 }
